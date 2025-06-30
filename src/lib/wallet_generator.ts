@@ -132,7 +132,7 @@ export async function sendTransaction(
     to_: toAddress,
     amount: String(Math.floor(Number(amount) * MICRO_UNIT)),
     nonce: nonce,
-    ou: Number(amount) < 1000 ? "1" : "3",
+    ou: Number(amount) < 1000 ? "2" : "3",
     timestamp: Date.now() / 1000 + Math.random() * 0.01, // float with jitter
   };
 
@@ -148,13 +148,12 @@ export async function sendTransaction(
   (tx as any)["public_key"] = Buffer.from(keypair.publicKey).toString("base64");
 
   const txHash = crypto.createHash("sha256").update(txBytes).digest("hex");
-  const trx = encodeTransaction(tx);
-
+  const trx = encodeTransaction(tx)
   // console.log(JSON.stringify(tx))
-  console.log("txHash", txHash)
+  console.log("txHash",txHash)
   const res = await fetch("/api/send-tx", {
     method: "POST",
-    body: JSON.stringify({ trx })
+    body: JSON.stringify({trx})
   })
   const data = await res.json()
   return data

@@ -21,7 +21,7 @@ import {
 import Button from "@/components/ui/button";
 import { SignKeyPair } from "tweetnacl";
 import { useWallet } from "@/context/wallet-context";
-import bip39 from "bip39";
+import {validateMnemonic} from "bip39";
 
 export default function Home() {
   const { wallet, setWallet, keypair, setKeypair } = useWallet();
@@ -60,7 +60,7 @@ export default function Home() {
         }, 2000);
         return;
       }
-      if (!bip39.validateMnemonic(mnemonicInput.trim())) {
+      if (!validateMnemonic(mnemonicInput.trim())) {
         setError("Invalid mnemonic phrase.");
         setInvalidMnemonic(true);
         setLoading(false);
