@@ -69,7 +69,8 @@ export default function BatchSend() {
   };
 
   return (
-    <div className="w-full max-w-xl bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-gray-900 rounded-2xl shadow-2xl p-8 space-y-8 animate-fade-in">
+    
+    <div className="w-full max-w-md bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-gray-900 rounded-2xl shadow-2xl p-4 space-y-8 animate-fade-in">
       <h2 className="text-2xl font-extrabold text-blue-800 dark:text-blue-200 mb-4 tracking-tight flex items-center gap-2">
         <Send className="w-6 h-6 text-blue-500 animate-bounce" /> Batch Send Transactions
       </h2>
@@ -94,7 +95,7 @@ export default function BatchSend() {
           />
         )}
       </div>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 ">
         {recipients.map((r, idx) => (
           <div
             key={idx}

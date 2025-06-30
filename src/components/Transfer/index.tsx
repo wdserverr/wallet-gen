@@ -79,7 +79,7 @@ function Transfer() {
   const nonce = addressData ? addressData.nonce : 0;
 
   return (
-    <div className="min-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 space-y-8">
+    <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 space-y-8">
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
           Send Transaction
@@ -124,7 +124,7 @@ function Transfer() {
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
           Recent Transactions
         </h2>
-        <div className="bg-gray-100 dark:bg-gray-700 rounded p-4 space-y-2 max-h-[400px] overflow-y-auto">
+        <div className="bg-gray-100 dark:bg-gray-700 rounded p-2 space-y-2 max-h-[400px] overflow-y-auto">
           {loading ? (
             <p className="text-gray-500 dark:text-gray-400 text-center">
               Loading...
@@ -133,7 +133,7 @@ function Transfer() {
             addressData.recent_transactions.map((tx, i) => (
               <div
                 key={tx.hash}
-                className="text-xs font-mono text-gray-600 dark:text-gray-300 break-all flex gap-2"
+                className="text-xs font-mono text-gray-600 dark:text-gray-300 flex gap-2"
               >
                 <div>{`[${i + 1}]`}</div>
                 <a
