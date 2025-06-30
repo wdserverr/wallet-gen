@@ -3,24 +3,31 @@ import { useEffect, useState } from "react";
 import {
   handleGenerateWallet,
   handleImportWallet,
+  handleTestSign,
   WalletData,
+  TestSign,
+  getKeypair,
 } from "@/lib/wallet_generator";
-import { Import, SquarePlus, Trash2 } from "lucide-react";
+import { FilePen, Import, SquarePlus, Trash2 } from "lucide-react";
 import Button from "@/components/ui/button";
+import { SignKeyPair } from "tweetnacl";
 export default function Home() {
   const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [keypair, setKeypair] = useState<SignKeyPair | null>(null);
   const [mnemonicInput, setMnemonicInput] = useState("");
   const [error, setError] = useState("");
   const [invalidMnemonic, setInvalidMnemonic] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [signature, setSignature] = useState<TestSign | null>(null);
 
   const handleGenerate = async () => {
     setError("");
     setLoading(true);
     try {
       const w = await handleGenerateWallet();
-      setWallet(w);
-      window.localStorage.setItem("wallet", JSON.stringify(w));
+      setWallet(w.walletData);
+      setKeypair(w.keypair);
+      window.localStorage.setItem("wallet", JSON.stringify(w.walletData));
     } catch (e: any) {
       setError(e.message);
     }
@@ -40,8 +47,9 @@ export default function Home() {
         return;
       }
       const w = await handleImportWallet(mnemonicInput);
-      setWallet(w);
-      window.localStorage.setItem("wallet", JSON.stringify(w));
+      setWallet(w.walletData);
+      setKeypair(w.keypair);
+      window.localStorage.setItem("wallet", JSON.stringify(w.walletData));
       setInvalidMnemonic(false);
     } catch (e: any) {
       setError(e.message);
@@ -51,9 +59,12 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const wallet = window.localStorage.getItem("wallet");
+    let wallet = window.localStorage.getItem("wallet");
     if (wallet) {
-      setWallet(JSON.parse(wallet));
+      const parsedWallet: WalletData = JSON.parse(wallet);
+      setWallet(parsedWallet);
+      const keyPair = getKeypair(parsedWallet.mnemonic.join(" "));
+      setKeypair(keyPair);
     }
   }, []);
   return (
@@ -63,6 +74,31 @@ export default function Home() {
           <img src={"/logo.svg"} width={35} />
           Octra Wallet
         </h1>
+
+        {keypair && (
+          <>
+            {signature ? (
+              <Button
+                Icon={Trash2}
+                text={"Remove Signature"}
+                color="red"
+                onClick={() => setSignature(null)}
+              />
+            ) : (
+              <Button
+                Icon={FilePen}
+                text={"Test Sign"}
+                color="blue"
+                onClick={() => setSignature(handleTestSign(keypair))}
+              />
+            )}
+          </>
+        )}
+        {signature && (
+          <div className="break-all text-gray-800 bg-gray-100 p-2 rounded-md   dark:text-gray-100 font-mono text-xs">
+            {JSON.stringify(signature, null, 2)}
+          </div>
+        )}
         {!wallet && (
           <div className="flex flex-col gap-4">
             <Button

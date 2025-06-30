@@ -1,6 +1,6 @@
-import nacl from "tweetnacl";
+import nacl, { SignKeyPair } from "tweetnacl";
 import { entropyToMnemonic, mnemonicToSeedSync } from "bip39";
-import crypto from "crypto";
+import crypto, { Sign } from "crypto";
 
 
 interface MasterKey {
@@ -40,10 +40,13 @@ export interface WalletData {
   public_key_b64: string;
   address: string;
   entropy_hex: string;
+}
+export interface TestSign {
   test_message: string;
   test_signature: string;
   signature_valid: boolean;
 }
+
 function base58Encode(buffer: Buffer): string {
   if (buffer.length === 0) return "";
 
@@ -91,7 +94,35 @@ function verifyAddressFormat(address: string): boolean {
 function base64Encode(buffer: Buffer | Uint8Array): string {
   return Buffer.from(buffer).toString("base64");
 }
-export async function handleGenerateWallet(): Promise<WalletData> {
+export function handleTestSign(keyPair: SignKeyPair): TestSign {
+  const testMessage: string =
+    '{"from":"test","to":"test","amount":"1000000","nonce":1}';
+  const messageBytes: Buffer = Buffer.from(testMessage, "utf8");
+  const signature: Uint8Array = nacl.sign.detached(
+    messageBytes,
+    keyPair.secretKey
+  );
+  const signatureB64: string = base64Encode(signature);
+
+  let signatureValid: boolean = false;
+  try {
+    signatureValid = nacl.sign.detached.verify(
+      messageBytes,
+      signature,
+      keyPair.publicKey
+    );
+    console.log("Signature test passed")
+  } catch (error: any) {
+    console.log("Signature test failed")
+    console.log(error)
+  }
+  return {
+    test_message: testMessage,
+    test_signature: signatureB64,
+    signature_valid: signatureValid,
+  }
+}
+export async function handleGenerateWallet(): Promise<{ walletData: WalletData, keypair: SignKeyPair }> {
   const entropy: Buffer = generateEntropy(128);
   const mnemonic: string = entropyToMnemonic(
     entropy.toString("hex")
@@ -109,27 +140,7 @@ export async function handleGenerateWallet(): Promise<WalletData> {
     console.log("ERROR: Invalid address format generated")
     throw new Error("Invalid address format generated");
   }
-  const testMessage: string =
-    '{"from":"test","to":"test","amount":"1000000","nonce":1}';
-  const messageBytes: Buffer = Buffer.from(testMessage, "utf8");
-  const signature: Uint8Array = nacl.sign.detached(
-    messageBytes,
-    keyPair.secretKey
-  );
-  const signatureB64: string = base64Encode(signature);
 
-  let signatureValid: boolean = false;
-  try {
-    signatureValid = nacl.sign.detached.verify(
-      messageBytes,
-      signature,
-      keyPair.publicKey
-    );
-    console.log("Signature test passed")
-  } catch (error: any) {
-    console.log("Signature test failed")
-    console.log(error)
-  }
   const walletData: WalletData = {
     mnemonic: mnemonicWords,
     seed_hex: bufferToHex(seed),
@@ -139,18 +150,24 @@ export async function handleGenerateWallet(): Promise<WalletData> {
     private_key_b64: base64Encode(privateKeyRaw),
     public_key_b64: base64Encode(publicKeyRaw),
     address: address,
-    entropy_hex: bufferToHex(entropy),
-    test_message: testMessage,
-    test_signature: signatureB64,
-    signature_valid: signatureValid,
+    entropy_hex: bufferToHex(entropy)
   };
 
-  return walletData;
+  return {
+    walletData,
+    keypair: keyPair
+  };
 
 }
 
+export function getKeypair(mnemonic: string): SignKeyPair {
+  const seed: Buffer = mnemonicToSeedSync(mnemonic);
+  const { masterPrivateKey, masterChainCode }: MasterKey = deriveMasterKey(seed);
+  const keyPair = nacl.sign.keyPair.fromSeed(masterPrivateKey);
+  return keyPair
+}
 
-export async function handleImportWallet(mnemonic: string): Promise<WalletData> {
+export async function handleImportWallet(mnemonic: string): Promise<{ walletData: WalletData, keypair: SignKeyPair }> {
   const entropy: Buffer = generateEntropy(128);
   const mnemonicWords: string[] = mnemonic.split(" ");
   const seed: Buffer = mnemonicToSeedSync(mnemonic);
@@ -165,27 +182,6 @@ export async function handleImportWallet(mnemonic: string): Promise<WalletData> 
     console.log("ERROR: Invalid address format generated")
     throw new Error("Invalid address format generated");
   }
-  const testMessage: string =
-    '{"from":"test","to":"test","amount":"1000000","nonce":1}';
-  const messageBytes: Buffer = Buffer.from(testMessage, "utf8");
-  const signature: Uint8Array = nacl.sign.detached(
-    messageBytes,
-    keyPair.secretKey
-  );
-  const signatureB64: string = base64Encode(signature);
-
-  let signatureValid: boolean = false;
-  try {
-    signatureValid = nacl.sign.detached.verify(
-      messageBytes,
-      signature,
-      keyPair.publicKey
-    );
-    console.log("Signature test passed")
-  } catch (error: any) {
-    console.log("Signature test failed")
-    console.log(error)
-  }
   const walletData: WalletData = {
     mnemonic: mnemonicWords,
     seed_hex: bufferToHex(seed),
@@ -195,12 +191,11 @@ export async function handleImportWallet(mnemonic: string): Promise<WalletData> 
     private_key_b64: base64Encode(privateKeyRaw),
     public_key_b64: base64Encode(publicKeyRaw),
     address: address,
-    entropy_hex: bufferToHex(entropy),
-    test_message: testMessage,
-    test_signature: signatureB64,
-    signature_valid: signatureValid,
+    entropy_hex: bufferToHex(entropy)
   };
 
-  return walletData;
-
+  return {
+    walletData,
+    keypair: keyPair
+  };
 }
