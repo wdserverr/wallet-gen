@@ -42,9 +42,9 @@ export interface WalletData {
   entropy_hex: string;
 }
 export interface TestSign {
-  test_message: string;
-  test_signature: string;
-  signature_valid: boolean;
+  message: string;
+  signature: string;
+  signatureValid: boolean;
 }
 
 function base58Encode(buffer: Buffer): string {
@@ -94,34 +94,39 @@ function verifyAddressFormat(address: string): boolean {
 function base64Encode(buffer: Buffer | Uint8Array): string {
   return Buffer.from(buffer).toString("base64");
 }
-export function handleTestSign(keyPair: SignKeyPair): TestSign {
-  const testMessage: string =
-    '{"from":"test","to":"test","amount":"1000000","nonce":1}';
-  const messageBytes: Buffer = Buffer.from(testMessage, "utf8");
-  const signature: Uint8Array = nacl.sign.detached(
-    messageBytes,
-    keyPair.secretKey
+export function handleTestSign(keypair: SignKeyPair): TestSign {
+  const message = "This is a test message";
+  const signature = nacl.sign.detached(
+    new TextEncoder().encode(message),
+    keypair.secretKey
   );
-  const signatureB64: string = base64Encode(signature);
-
-  let signatureValid: boolean = false;
-  try {
-    signatureValid = nacl.sign.detached.verify(
-      messageBytes,
-      signature,
-      keyPair.publicKey
-    );
-    console.log("Signature test passed")
-  } catch (error: any) {
-    console.log("Signature test failed")
-    console.log(error)
-  }
+  const signatureValid = nacl.sign.detached.verify(
+    new TextEncoder().encode(message),
+    signature,
+    keypair.publicKey
+  );
   return {
-    test_message: testMessage,
-    test_signature: signatureB64,
-    signature_valid: signatureValid,
-  }
+    message,
+    signature: bufferToHex(signature),
+    signatureValid,
+  };
 }
+
+export function signTransaction(
+  keypair: SignKeyPair,
+  from: string,
+  to: string,
+  amount: number
+) {
+  const transaction = { from, to, amount};
+  const messageBytes = new TextEncoder().encode(JSON.stringify(transaction));
+  const signature = nacl.sign.detached(messageBytes, keypair.secretKey);
+  return {
+    transaction,
+    signature: bufferToHex(signature),
+  };
+}
+
 export async function handleGenerateWallet(): Promise<{ walletData: WalletData, keypair: SignKeyPair }> {
   const entropy: Buffer = generateEntropy(128);
   const mnemonic: string = entropyToMnemonic(
@@ -157,7 +162,6 @@ export async function handleGenerateWallet(): Promise<{ walletData: WalletData, 
     walletData,
     keypair: keyPair
   };
-
 }
 
 export function getKeypair(mnemonic: string): SignKeyPair {
