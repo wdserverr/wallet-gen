@@ -21,6 +21,7 @@ import {
 import Button from "@/components/ui/button";
 import { SignKeyPair } from "tweetnacl";
 import { useWallet } from "@/context/wallet-context";
+import bip39 from "bip39";
 
 export default function Home() {
   const { wallet, setWallet, keypair, setKeypair } = useWallet();
@@ -57,6 +58,12 @@ export default function Home() {
           setLoading(false);
           setInvalidMnemonic(true);
         }, 2000);
+        return;
+      }
+      if (!bip39.validateMnemonic(mnemonicInput.trim())) {
+        setError("Invalid mnemonic phrase.");
+        setInvalidMnemonic(true);
+        setLoading(false);
         return;
       }
       const w = await handleImportWallet(mnemonicInput);
@@ -145,11 +152,7 @@ export default function Home() {
               color="green"
               onClick={handleImport}
             />
-            {invalidMnemonic && (
-              <div className="text-red-500">
-                Cannot import menmonic is invalid
-              </div>
-            )}
+
           </div>
         </div>
       )}
@@ -229,10 +232,26 @@ export default function Home() {
                 </div>
                 <div>
                   <div className="font-semibold text-gray-700 dark:text-gray-200">
+                    Public Key B64:
+                  </div>
+                  <div className="break-all text-gray-800 dark:text-gray-100 font-mono text-xs">
+                    {wallet.public_key_b64}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-700 dark:text-gray-200">
                     Private Key:
                   </div>
                   <div className="break-all text-gray-800 dark:text-gray-100 font-mono text-xs">
                     {wallet.private_key_hex}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-700 dark:text-gray-200">
+                    Private Key B64:
+                  </div>
+                  <div className="break-all text-gray-800 dark:text-gray-100 font-mono text-xs">
+                    {wallet.private_key_b64}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">

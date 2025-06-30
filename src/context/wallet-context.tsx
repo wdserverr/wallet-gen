@@ -24,7 +24,6 @@ export const WalletProvider = ({ children }: { children: React.ReactNode }) => {
     const stored = window.localStorage.getItem("wallet");
     if (stored) {
       const parsed: WalletData = JSON.parse(stored);
-      console.log(parsed);
       setWallet(parsed || null);
       setKeypair(getKeypair(parsed.mnemonic.join(" ")));
     }

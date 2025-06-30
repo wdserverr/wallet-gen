@@ -1,6 +1,7 @@
 import nacl, { SignKeyPair } from "tweetnacl";
 import { entropyToMnemonic, mnemonicToSeedSync } from "bip39";
 import crypto, { Sign } from "crypto";
+const MICRO_UNIT = 1_000_000;
 
 
 interface MasterKey {
@@ -111,14 +112,60 @@ export function handleTestSign(keypair: SignKeyPair): TestSign {
     signatureValid,
   };
 }
+export function encodeTransaction(tx: any): string {
+  return btoa(JSON.stringify(tx));
+}
+export function decodeTransaction(encoded: string): any {
+  return JSON.parse(atob(encoded));
+}
 
+
+export async function sendTransaction(
+  keypair: SignKeyPair,
+  fromAddress: string,
+  toAddress: string,
+  amount: string,
+  nonce: number
+) {
+  const tx = {
+    from: fromAddress,
+    to_: toAddress,
+    amount: String(Math.floor(Number(amount) * MICRO_UNIT)),
+    nonce: nonce,
+    ou: Number(amount) < 1000 ? "1" : "3",
+    timestamp: Date.now() / 1000 + Math.random() * 0.01, // float with jitter
+  };
+
+  // Serialize transaction to canonical JSON
+  const txString = JSON.stringify(tx);
+  const txBytes = new TextEncoder().encode(txString);
+
+  // Sign transaction
+  const signatureBytes = nacl.sign.detached(txBytes, keypair.secretKey);
+  const signatureBase64 = Buffer.from(signatureBytes).toString("base64");
+  // Append signature and base64-encoded public key
+  (tx as any)["signature"] = signatureBase64;
+  (tx as any)["public_key"] = Buffer.from(keypair.publicKey).toString("base64");
+
+  const txHash = crypto.createHash("sha256").update(txBytes).digest("hex");
+  const trx = encodeTransaction(tx);
+
+  // console.log(JSON.stringify(tx))
+  console.log("txHash", txHash)
+  const res = await fetch("/api/send-tx", {
+    method: "POST",
+    body: JSON.stringify({ trx })
+  })
+  const data = await res.json()
+  return data
+}
 export function signTransaction(
   keypair: SignKeyPair,
   from: string,
   to: string,
   amount: number
 ) {
-  const transaction = { from, to, amount};
+  const transaction = { from, to, amount };
   const messageBytes = new TextEncoder().encode(JSON.stringify(transaction));
   const signature = nacl.sign.detached(messageBytes, keypair.secretKey);
   return {

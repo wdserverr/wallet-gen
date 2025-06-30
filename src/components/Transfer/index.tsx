@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useWallet } from "@/context/wallet-context";
-import { signTransaction } from "@/lib/wallet_generator";
+import { sendTransaction, signTransaction } from "@/lib/wallet_generator";
 import Button from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { AddressData, Transaction } from "@/lib/types";
@@ -13,7 +13,6 @@ function Transfer() {
   const [amount, setAmount] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const MICRO_UNIT = 1_000_000;
 
   async function fetchAddressData(address: string): Promise<AddressData> {
     const response = await fetch(`api/info?address=${address}`);
@@ -27,23 +26,28 @@ function Transfer() {
   useEffect(() => {
     if (wallet?.address) {
       setLoading(true);
-      fetchAddressData(wallet.address)
-        .then((res) => {
-          if (res.error) {
-            return;
-          } else {
-            setAddressData(res);
-          }
-        })
-        .catch((err) => setError("Failed to fetch account data."))
-        .finally(() => setLoading(false));
+      const fetchAndSet = () => {
+        fetchAddressData(wallet.address)
+          .then((res) => {
+            if (res.error) {
+              return;
+            } else {
+              setAddressData(res);
+            }
+          })
+          .catch((err) => setError("Failed to fetch account data."))
+          .finally(() => setLoading(false));
+      };
+      fetchAndSet();
+      const interval = setInterval(fetchAndSet, 10000);
+      return () => clearInterval(interval);
     }
   }, [wallet?.address]);
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     setError("");
     setSuccess("");
-    if (!wallet || !keypair) {
+    if (!wallet || !keypair || !addressData) {
       setError("Wallet not connected or data not loaded.");
       return;
     }
@@ -51,17 +55,19 @@ function Transfer() {
       setError("Please fill in all fields.");
       return;
     }
-
+    if (to.toLowerCase() === addressData.address.toLowerCase()) {
+      setError("Cannot send to yourself!");
+      return
+    }
     try {
-      const signedTx = signTransaction(
+      const result = await sendTransaction(
         keypair,
         wallet.address,
         to,
-        parseFloat(amount)
+        amount,
+        addressData?.nonce + 1
       );
-      setSuccess(`Transaction Signed: ${signedTx.signature}`);
-      console.log("Signed Transaction:", signedTx);
-      // Here you would broadcast the transaction to the network
+      setSuccess(`Result: ${JSON.stringify(result)}`);
     } catch (e: any) {
       setError(e.message);
     }

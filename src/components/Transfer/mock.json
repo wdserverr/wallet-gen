@@ -1,0 +1,15 @@
+{
+    "method": "POST",
+    "endpoint": "/send-tx",
+    "rpcUrl": "https://octra.network",
+    "payload": {
+        "from": "oct2unmcYdAyu6z36wYYNbNwTV35vuB3CswniaKbkDFvv6m",
+        "to_": "oct2unmcYdAyu6z36wYYNbNwTV35vuB3CswniaKbkDFvv6m",
+        "amount": "10000",
+        "nonce": 5,
+        "ou": "1",
+        "timestamp": 1751300981.177422,
+        "signature": "MGiBH93Cgj2iC164uFpYnPI3MTOEMLxpwMFGk5aaq+iKJrXt/syfYYtZNkLoLv40Ro5VzodhiQPQ4WuHkvBgAA==",
+        "public_key": "m3K9p+WpsGXGEZJDOUwE7pJ3nnTFLuye5Hv5Z4Opi+o="
+    }
+}

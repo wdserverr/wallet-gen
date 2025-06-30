@@ -1,6 +1,7 @@
 "use client";
 import Home from "@/components/Home";
 import Transfer from "@/components/Transfer";
+import BatchSend from "@/components/Transfer/BatchSend";
 import { useWallet } from "@/context/wallet-context";
 export default function Page() {
   const { wallet } = useWallet();
@@ -8,6 +9,7 @@ export default function Page() {
     <div className="min-h-screen bg-slate-500 dark:bg-gray-900 flex max-lg:flex-col max-lg:items-center justify-center p-4 gap-8">
       <Home />
       {wallet && <Transfer />}
+      {wallet && <BatchSend />}
     </div>
   );
 }
