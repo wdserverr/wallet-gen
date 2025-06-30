@@ -1,5 +1,5 @@
 import nacl from "tweetnacl";
-import bip39 from "bip39";
+import { entropyToMnemonic, mnemonicToSeedSync } from "bip39";
 import crypto from "crypto";
 
 
@@ -93,11 +93,11 @@ function base64Encode(buffer: Buffer | Uint8Array): string {
 }
 export async function handleGenerateWallet(): Promise<WalletData> {
   const entropy: Buffer = generateEntropy(128);
-  const mnemonic: string = bip39.entropyToMnemonic(
+  const mnemonic: string = entropyToMnemonic(
     entropy.toString("hex")
   );
   const mnemonicWords: string[] = mnemonic.split(" ");
-  const seed: Buffer = bip39.mnemonicToSeedSync(mnemonic);
+  const seed: Buffer = mnemonicToSeedSync(mnemonic);
   const { masterPrivateKey, masterChainCode }: MasterKey = deriveMasterKey(seed);
   const keyPair = nacl.sign.keyPair.fromSeed(masterPrivateKey);
   const privateKeyRaw: Buffer = Buffer.from(
@@ -153,7 +153,7 @@ export async function handleGenerateWallet(): Promise<WalletData> {
 export async function handleImportWallet(mnemonic: string): Promise<WalletData> {
   const entropy: Buffer = generateEntropy(128);
   const mnemonicWords: string[] = mnemonic.split(" ");
-  const seed: Buffer = bip39.mnemonicToSeedSync(mnemonic);
+  const seed: Buffer = mnemonicToSeedSync(mnemonic);
   const { masterPrivateKey, masterChainCode }: MasterKey = deriveMasterKey(seed);
   const keyPair = nacl.sign.keyPair.fromSeed(masterPrivateKey);
   const privateKeyRaw: Buffer = Buffer.from(
